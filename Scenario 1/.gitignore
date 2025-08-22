@@ -1,0 +1,9 @@
+.vscode/*
+
+
+.history/
+
+*.vsix
+
+.history
+.ionide

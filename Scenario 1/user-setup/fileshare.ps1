@@ -1,0 +1,96 @@
+#requirement: Windows 10 Pro
+# === 1. Setup Administrator ===
+if (-not ([Security.Principal.WindowsPrincipal] `
+    [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
+    [Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "You must run this script as Administrator!"
+    exit
+}
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
+$SecurePassword = ConvertTo-SecureString "P@ssw0rd123" -AsPlainText -Force
+
+Write-Output "[*] Enabling built-in Administrator account..."
+Enable-LocalUser -Name "Administrator" -ErrorAction SilentlyContinue
+
+Write-Output "[*] Setting password for Administrator..."
+Set-LocalUser -Name "Administrator" -Password $SecurePassword
+
+# === 2. Enable SMB Server and create share ===
+Write-Output "[*] Enabling SMB1 Protocol..."
+Enable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -ErrorAction SilentlyContinue
+Write-Output "[*] Starting required services for SMB..."
+Start-Service -Name "LanmanServer" -ErrorAction SilentlyContinue
+Set-Service -Name "LanmanServer" -StartupType Automatic
+Set-NetFirewallRule -DisplayGroup "File and Printer Sharing" -Enabled True
+New-Item -ItemType Directory -Path "C:\SMBShare"
+New-SmbShare -Name "Share01" -Path "C:\SMBShare" -FullAccess "Everyone"
+
+# WinRm
+# $profiles = Get-NetConnectionProfile | Where-Object {$_.NetworkCategory -eq 'Public'}
+
+# foreach ($profile in $profiles) {
+#     Set-NetConnectionProfile -InterfaceIndex $profile.InterfaceIndex -NetworkCategory Private
+#     Write-Host "Changed interface $($profile.Name) to Private"
+# }
+
+# winrm quickconfig -quiet
+# Enable-PSRemoting -Force
+# Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP-PUBLIC" -RemoteAddress Any -Action Allow
+# Write-Host "`n[+] WinRM enabled and firewall opened on Private network."
+$profiles = Get-NetConnectionProfile | Where-Object {$_.NetworkCategory -eq 'Public'}
+
+foreach ($profile in $profiles) {
+    Set-NetConnectionProfile -InterfaceIndex $profile.InterfaceIndex -NetworkCategory Private
+    Write-Host "Changed interface $($profile.Name) to Private"
+}
+
+winrm quickconfig -quiet
+Enable-PSRemoting -Force
+
+Enable-NetFirewallRule -DisplayGroup "Windows Remote Management"
+
+Get-NetFirewallRule -DisplayGroup "Windows Remote Management" |
+    Set-NetFirewallRule -RemoteAddress Any
+
+Write-Host "`n[+] WinRM enabled and firewall opened on Private network."
+
+
+# === 5. Enable RDP Service ===
+Write-Output "[*] Enabling RDP service..."
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+Start-Service -Name TermService -ErrorAction SilentlyContinue
+Set-Service -Name TermService -StartupType Automatic
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" -Name "fSingleSessionPerUser" -Value 0
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" -Name "MaxInstanceCount" -Value 999999
+
+# === 6. Sysmon ===
+[string]$path=[Environment]::GetFolderPath("Desktop")   
+If(!(test-path $path))
+{
+	Write-Information -MessageData "Path does not exist.  Creating Path..." -InformationAction Continue;
+	New-Item -ItemType Directory -Force -Path $path | Out-Null;
+	Write-Information -MessageData "...Complete" -InformationAction Continue
+}
+Set-Location $path
+Write-Host "Location set $path"
+Write-Host "Retrieving Sysmon..."
+Invoke-WebRequest -Uri https://download.sysinternals.com/files/Sysmon.zip -Outfile Sysmon.zip
+Write-Host "Sysmon Retrived"
+Write-Host "Unzip Sysmon..."
+Expand-Archive Sysmon.zip
+Set-Location $path\Sysmon
+Write-Host "Unzip Complete."
+Write-Host "Retrieving Configuration File..."
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml -Outfile sysmonconfig-export.xml
+
+Write-Host "Configuration File Retrieved."
+Write-Host "Installing Sysmon..."
+.\sysmon64.exe -accepteula -i sysmonconfig-export.xml
+Write-Host "Sysmon Installed!"
+
+
+# === Done ===
+Write-Output "`nLab setup completed successfully. You can now test privilege escalation exploits."

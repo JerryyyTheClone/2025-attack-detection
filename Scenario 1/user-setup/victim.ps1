@@ -1,3 +1,4 @@
+#requirement: Windows 10 Pro
 # === 1. Setup Administrator ===
 if (-not ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
@@ -5,6 +6,8 @@ if (-not ([Security.Principal.WindowsPrincipal] `
     Write-Warning "You must run this script as Administrator!"
     exit
 }
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 $SecurePassword = ConvertTo-SecureString "P@ssw0rd123" -AsPlainText -Force
 
@@ -25,6 +28,17 @@ New-Item -ItemType Directory -Path "C:\SMBShare"
 New-SmbShare -Name "Share01" -Path "C:\SMBShare" -FullAccess "Everyone"
 
 # WinRm
+# $profiles = Get-NetConnectionProfile | Where-Object {$_.NetworkCategory -eq 'Public'}
+
+# foreach ($profile in $profiles) {
+#     Set-NetConnectionProfile -InterfaceIndex $profile.InterfaceIndex -NetworkCategory Private
+#     Write-Host "Changed interface $($profile.Name) to Private"
+# }
+
+# winrm quickconfig -quiet
+# Enable-PSRemoting -Force
+# Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP-PUBLIC" -RemoteAddress Any -Action Allow
+# Write-Host "`n[+] WinRM enabled and firewall opened on Private network."
 $profiles = Get-NetConnectionProfile | Where-Object {$_.NetworkCategory -eq 'Public'}
 
 foreach ($profile in $profiles) {
@@ -34,7 +48,12 @@ foreach ($profile in $profiles) {
 
 winrm quickconfig -quiet
 Enable-PSRemoting -Force
-Set-NetFirewallRule -Name "WINRM-HTTP-In-TCP-PUBLIC" -RemoteAddress Any -Action Allow
+
+Enable-NetFirewallRule -DisplayGroup "Windows Remote Management"
+
+Get-NetFirewallRule -DisplayGroup "Windows Remote Management" |
+    Set-NetFirewallRule -RemoteAddress Any
+
 Write-Host "`n[+] WinRM enabled and firewall opened on Private network."
 
 
@@ -63,12 +82,30 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" 
 Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" -Name "MaxInstanceCount" -Value 999999
 
 # === 6. Sysmon ===
-curl https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml > C:\Windows\sysmon-config.xml
-.\Sysmon64.exe -accepteula -i C:\Windows\sysmon-config.xml
+[string]$path=[Environment]::GetFolderPath("Desktop")   
+If(!(test-path $path))
+{
+	Write-Information -MessageData "Path does not exist.  Creating Path..." -InformationAction Continue;
+	New-Item -ItemType Directory -Force -Path $path | Out-Null;
+	Write-Information -MessageData "...Complete" -InformationAction Continue
+}
+Set-Location $path
+Write-Host "Location set $path"
+Write-Host "Retrieving Sysmon..."
+Invoke-WebRequest -Uri https://download.sysinternals.com/files/Sysmon.zip -Outfile Sysmon.zip
+Write-Host "Sysmon Retrived"
+Write-Host "Unzip Sysmon..."
+Expand-Archive Sysmon.zip
+Set-Location $path\Sysmon
+Write-Host "Unzip Complete."
+Write-Host "Retrieving Configuration File..."
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml -Outfile sysmonconfig-export.xml
 
+Write-Host "Configuration File Retrieved."
+Write-Host "Installing Sysmon..."
+.\sysmon64.exe -accepteula -i sysmonconfig-export.xml
+Write-Host "Sysmon Installed!"
 
-# === 7. Clear all log ===
-Get-WinEvent -ListLog * -Force | ForEach-Object { wevtutil.exe cl $_.LogName }
 
 # === Done ===
 Write-Output "`nLab setup completed successfully. You can now test privilege escalation exploits."

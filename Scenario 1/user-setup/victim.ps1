@@ -1,5 +1,7 @@
 #requirement: Windows 10 Pro
 # === 1. Setup Administrator ===
+# set quyền truy cập rdp cho user1 trong compmgmt.msc
+
 if (-not ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
     [Security.Principal.WindowsBuiltInRole]::Administrator)) {

